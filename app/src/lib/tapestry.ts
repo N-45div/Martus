@@ -1,32 +1,10 @@
 // Tapestry Social Integration
-// Uses REST API with local fallback for CORS issues in demo mode
+// Uses local API proxy server to avoid CORS issues
+// Full end-to-end integration with Tapestry Protocol
 
-const API_URL = 'https://api.usetapestry.dev/v1';
-const API_KEY = import.meta.env.VITE_TAPESTRY_API_KEY || 'demo-key';
-const NAMESPACE = 'collab-canvas';
+const API_BASE = '/api/tapestry';
 
-// Local storage fallback for demo (when CORS blocks API)
-const LOCAL_STORAGE_KEY = 'martus_social_data';
-let useLocalFallback = false;
-
-interface LocalSocialData {
-  profiles: Record<string, TapestryProfile>;
-  comments: Record<string, TapestryComment[]>;
-  likes: Record<string, { count: number; users: string[] }>;
-}
-
-function getLocalData(): LocalSocialData {
-  try {
-    const data = localStorage.getItem(LOCAL_STORAGE_KEY);
-    return data ? JSON.parse(data) : { profiles: {}, comments: {}, likes: {} };
-  } catch {
-    return { profiles: {}, comments: {}, likes: {} };
-  }
-}
-
-function saveLocalData(data: LocalSocialData) {
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-}
+// ==================== TYPES ====================
 
 export interface TapestryProfile {
   id: string;
@@ -35,6 +13,8 @@ export interface TapestryProfile {
   bio: string;
   image: string;
   createdAt: string;
+  followerCount?: number;
+  followingCount?: number;
 }
 
 export interface TapestryComment {
@@ -46,62 +26,67 @@ export interface TapestryComment {
   profile?: TapestryProfile;
 }
 
-async function tapestryFetch(endpoint: string, options: RequestInit = {}) {
-  // Skip API call if we know it's blocked
-  if (useLocalFallback) {
-    throw new Error('Using local fallback');
-  }
-
-  try {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        ...options.headers,
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Tapestry API error: ${response.status}`);
-    }
-    
-    return response.json();
-  } catch (error) {
-    // CORS or network error - switch to local fallback
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      console.warn('Tapestry API blocked by CORS, using local storage fallback');
-      useLocalFallback = true;
-    }
-    throw error;
-  }
+export interface TapestryContent {
+  id: string;
+  profileId: string;
+  type: string;
+  data: Record<string, unknown>;
+  contentId: string;
+  createdAt: string;
+  profile?: TapestryProfile;
+  likeCount?: number;
+  commentCount?: number;
 }
 
-export async function getOrCreateProfile(walletAddress: string): Promise<TapestryProfile | null> {
+export interface TapestryFollower {
+  id: string;
+  profile: TapestryProfile;
+  createdAt: string;
+}
+
+// ==================== API FETCH ====================
+
+async function tapestryFetch<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Tapestry API error: ${response.status} - ${error}`);
+  }
+  
+  return response.json();
+}
+
+// ==================== PROFILES ====================
+
+export async function getOrCreateProfile(walletAddress: string, username?: string): Promise<TapestryProfile | null> {
   try {
-    const result = await tapestryFetch(`/profiles/findOrCreate?namespace=${NAMESPACE}`, {
+    const result = await tapestryFetch<TapestryProfile>('/profiles/findOrCreate', {
       method: 'POST',
       body: JSON.stringify({
         walletAddress,
-        username: `artist_${walletAddress.slice(0, 8)}`,
+        username: username || `artist_${walletAddress.slice(0, 8)}`,
       }),
     });
-    return result as TapestryProfile;
-  } catch {
-    // Fallback: create local profile
-    const data = getLocalData();
-    if (!data.profiles[walletAddress]) {
-      data.profiles[walletAddress] = {
-        id: `local_${walletAddress.slice(0, 8)}`,
-        walletAddress,
-        username: `player_${walletAddress.slice(0, 6)}`,
-        bio: '',
-        image: '',
-        createdAt: new Date().toISOString(),
-      };
-      saveLocalData(data);
-    }
-    return data.profiles[walletAddress];
+    return result;
+  } catch (error) {
+    console.error('Get/create profile error:', error);
+    return null;
+  }
+}
+
+export async function getProfile(walletAddress: string): Promise<TapestryProfile | null> {
+  try {
+    return await tapestryFetch<TapestryProfile>(`/profiles/${walletAddress}`);
+  } catch (error) {
+    console.error('Get profile error:', error);
+    return null;
   }
 }
 
@@ -110,100 +95,127 @@ export async function updateProfile(
   updates: { username?: string; bio?: string; image?: string }
 ): Promise<TapestryProfile | null> {
   try {
-    const result = await tapestryFetch(`/profiles/${profileId}`, {
+    return await tapestryFetch<TapestryProfile>(`/profiles/${profileId}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
-    return result as TapestryProfile;
   } catch (error) {
     console.error('Update profile error:', error);
     return null;
   }
 }
 
+export async function searchProfiles(query: string): Promise<TapestryProfile[]> {
+  try {
+    const result = await tapestryFetch<{ profiles: TapestryProfile[] }>(`/profiles/search?query=${encodeURIComponent(query)}`);
+    return result.profiles || [];
+  } catch (error) {
+    console.error('Search profiles error:', error);
+    return [];
+  }
+}
+
+// ==================== COMMENTS ====================
+
 export async function getComments(contentId: string): Promise<TapestryComment[]> {
   try {
-    const result = await tapestryFetch(`/comments?contentId=${contentId}&namespace=${NAMESPACE}`);
-    return (result?.comments || []) as TapestryComment[];
-  } catch {
-    // Fallback: get local comments
-    const data = getLocalData();
-    return data.comments[contentId] || [];
+    const result = await tapestryFetch<{ comments: TapestryComment[] }>(`/comments?contentId=${encodeURIComponent(contentId)}`);
+    return result.comments || [];
+  } catch (error) {
+    console.error('Get comments error:', error);
+    return [];
   }
 }
 
 export async function postComment(
   profileId: string,
   contentId: string,
-  content: string
+  text: string
 ): Promise<TapestryComment | null> {
   try {
-    const result = await tapestryFetch(`/comments?namespace=${NAMESPACE}`, {
+    return await tapestryFetch<TapestryComment>('/comments', {
       method: 'POST',
-      body: JSON.stringify({
-        profileId,
-        contentId,
-        text: content,
-      }),
+      body: JSON.stringify({ profileId, contentId, text }),
     });
-    return result as TapestryComment;
-  } catch {
-    // Fallback: save comment locally
-    const data = getLocalData();
-    const profile = Object.values(data.profiles).find(p => p.id === profileId);
-    const newComment: TapestryComment = {
-      id: `comment_${Date.now()}`,
-      profileId,
-      content,
-      contentId,
-      createdAt: new Date().toISOString(),
-      profile,
-    };
-    if (!data.comments[contentId]) {
-      data.comments[contentId] = [];
-    }
-    data.comments[contentId].unshift(newComment);
-    saveLocalData(data);
-    return newComment;
+  } catch (error) {
+    console.error('Post comment error:', error);
+    return null;
+  }
+}
+
+export async function deleteComment(commentId: string): Promise<boolean> {
+  try {
+    await tapestryFetch(`/comments/${commentId}`, { method: 'DELETE' });
+    return true;
+  } catch (error) {
+    console.error('Delete comment error:', error);
+    return false;
+  }
+}
+
+// ==================== LIKES ====================
+
+export async function getLikes(contentId: string): Promise<number> {
+  try {
+    const result = await tapestryFetch<{ count: number }>(`/likes/${encodeURIComponent(contentId)}`);
+    return result.count || 0;
+  } catch (error) {
+    console.error('Get likes error:', error);
+    return 0;
   }
 }
 
 export async function likeContent(profileId: string, contentId: string): Promise<boolean> {
   try {
-    await tapestryFetch(`/likes/${contentId}?namespace=${NAMESPACE}`, {
+    await tapestryFetch(`/likes/${encodeURIComponent(contentId)}`, {
       method: 'POST',
       body: JSON.stringify({ profileId }),
     });
     return true;
-  } catch {
-    // Fallback: save like locally
-    const data = getLocalData();
-    if (!data.likes[contentId]) {
-      data.likes[contentId] = { count: 0, users: [] };
-    }
-    if (!data.likes[contentId].users.includes(profileId)) {
-      data.likes[contentId].count++;
-      data.likes[contentId].users.push(profileId);
-      saveLocalData(data);
-    }
-    return true;
+  } catch (error) {
+    console.error('Like error:', error);
+    return false;
   }
 }
 
-export async function getLikes(contentId: string): Promise<number> {
+export async function unlikeContent(profileId: string, contentId: string): Promise<boolean> {
   try {
-    const result = await tapestryFetch(`/likes/${contentId}?namespace=${NAMESPACE}`);
-    return result?.count || 0;
-  } catch {
-    // Fallback: get local likes
-    const data = getLocalData();
-    return data.likes[contentId]?.count || 0;
+    await tapestryFetch(`/likes/${encodeURIComponent(contentId)}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ profileId }),
+    });
+    return true;
+  } catch (error) {
+    console.error('Unlike error:', error);
+    return false;
+  }
+}
+
+// ==================== FOLLOWERS ====================
+
+export async function getFollowers(profileId: string): Promise<TapestryFollower[]> {
+  try {
+    const result = await tapestryFetch<{ followers: TapestryFollower[] }>(`/followers/${profileId}`);
+    return result.followers || [];
+  } catch (error) {
+    console.error('Get followers error:', error);
+    return [];
+  }
+}
+
+export async function getFollowing(profileId: string): Promise<TapestryFollower[]> {
+  try {
+    const result = await tapestryFetch<{ following: TapestryFollower[] }>(`/following/${profileId}`);
+    return result.following || [];
+  } catch (error) {
+    console.error('Get following error:', error);
+    return [];
   }
 }
 
 export async function followProfile(followerProfileId: string, followingProfileId: string): Promise<boolean> {
   try {
-    await tapestryFetch(`/followers?namespace=${NAMESPACE}`, {
+    await tapestryFetch('/followers', {
       method: 'POST',
       body: JSON.stringify({
         startId: followerProfileId,
@@ -214,5 +226,90 @@ export async function followProfile(followerProfileId: string, followingProfileI
   } catch (error) {
     console.error('Follow error:', error);
     return false;
+  }
+}
+
+export async function unfollowProfile(followerProfileId: string, followingProfileId: string): Promise<boolean> {
+  try {
+    await tapestryFetch('/followers', {
+      method: 'DELETE',
+      body: JSON.stringify({
+        startId: followerProfileId,
+        endId: followingProfileId,
+      }),
+    });
+    return true;
+  } catch (error) {
+    console.error('Unfollow error:', error);
+    return false;
+  }
+}
+
+// ==================== CONTENT/POSTS ====================
+
+export async function getContent(profileId?: string, type?: string): Promise<TapestryContent[]> {
+  try {
+    let endpoint = '/content';
+    const params = new URLSearchParams();
+    if (profileId) params.append('profileId', profileId);
+    if (type) params.append('type', type);
+    if (params.toString()) endpoint += `?${params.toString()}`;
+    
+    const result = await tapestryFetch<{ content: TapestryContent[] }>(endpoint);
+    return result.content || [];
+  } catch (error) {
+    console.error('Get content error:', error);
+    return [];
+  }
+}
+
+export async function createContent(
+  profileId: string,
+  type: string,
+  data: Record<string, unknown>,
+  contentId?: string
+): Promise<TapestryContent | null> {
+  try {
+    return await tapestryFetch<TapestryContent>('/content', {
+      method: 'POST',
+      body: JSON.stringify({ profileId, type, data, contentId }),
+    });
+  } catch (error) {
+    console.error('Create content error:', error);
+    return null;
+  }
+}
+
+// ==================== FEED ====================
+
+export async function getFeed(profileId: string): Promise<TapestryContent[]> {
+  try {
+    const result = await tapestryFetch<{ feed: TapestryContent[] }>(`/feed/${profileId}`);
+    return result.feed || [];
+  } catch (error) {
+    console.error('Get feed error:', error);
+    return [];
+  }
+}
+
+// ==================== IDENTITIES ====================
+
+export async function resolveIdentity(identifier: string): Promise<TapestryProfile | null> {
+  try {
+    return await tapestryFetch<TapestryProfile>(`/identities/${encodeURIComponent(identifier)}`);
+  } catch (error) {
+    console.error('Resolve identity error:', error);
+    return null;
+  }
+}
+
+// ==================== HEALTH CHECK ====================
+
+export async function checkApiHealth(): Promise<{ status: string; tapestryConfigured: boolean }> {
+  try {
+    const response = await fetch('/api/health');
+    return await response.json();
+  } catch {
+    return { status: 'error', tapestryConfigured: false };
   }
 }

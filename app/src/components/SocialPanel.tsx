@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { formatAddress } from '../lib/program';
 import { 
@@ -7,6 +7,7 @@ import {
   postComment, 
   likeContent, 
   getLikes,
+  checkApiHealth,
   type TapestryProfile,
   type TapestryComment 
 } from '../lib/tapestry';
@@ -24,28 +25,37 @@ export function SocialPanel({ contentId, title }: SocialPanelProps) {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [hasLiked, setHasLiked] = useState(false);
+  const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
-  useEffect(() => {
-    if (publicKey) {
-      loadProfile();
-    }
-    loadSocialData();
-  }, [publicKey, contentId]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!publicKey) return;
     const p = await getOrCreateProfile(publicKey.toBase58());
     setProfile(p);
-  };
+  }, [publicKey]);
 
-  const loadSocialData = async () => {
+  const loadSocialData = useCallback(async () => {
     const [fetchedComments, fetchedLikes] = await Promise.all([
       getComments(contentId),
       getLikes(contentId),
     ]);
     setComments(fetchedComments);
     setLikes(fetchedLikes);
-  };
+  }, [contentId]);
+
+  useEffect(() => {
+    checkApiHealth().then(health => {
+      setApiStatus(health.status === 'ok' ? 'online' : 'offline');
+    });
+  }, []);
+
+  useEffect(() => {
+    if (publicKey && apiStatus === 'online') {
+      loadProfile();
+    }
+    if (apiStatus === 'online') {
+      loadSocialData();
+    }
+  }, [publicKey, contentId, apiStatus, loadProfile, loadSocialData]);
 
   const handlePostComment = async () => {
     if (!profile || !newComment.trim()) return;
@@ -147,10 +157,24 @@ export function SocialPanel({ contentId, title }: SocialPanelProps) {
         )}
       </div>
 
-      {!publicKey && (
+      {!publicKey && apiStatus === 'online' && (
         <div className="text-center py-4 border-2 border-dashed border-[--pixel-mid]">
           <div className="text-2xl mb-2">🔌</div>
           <p className="text-[--pixel-light] text-sm">Connect wallet to chat</p>
+        </div>
+      )}
+
+      {apiStatus === 'checking' && (
+        <div className="text-center py-4">
+          <div className="font-pixel text-[8px] text-pixel-cyan animate-pulse">CONNECTING...</div>
+        </div>
+      )}
+
+      {apiStatus === 'offline' && (
+        <div className="text-center py-4 border-2 border-dashed border-[--pixel-orange]">
+          <div className="text-2xl mb-2">⚠️</div>
+          <p className="text-pixel-orange text-sm font-pixel text-[8px]">API SERVER OFFLINE</p>
+          <p className="text-[--pixel-light] text-xs mt-2">Run: npm run dev</p>
         </div>
       )}
     </div>
