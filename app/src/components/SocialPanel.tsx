@@ -10,10 +10,9 @@ import {
   type TapestryProfile,
   type TapestryComment 
 } from '../lib/tapestry';
-import { MessageSquare, Heart, User, Send } from 'lucide-react';
 
 interface SocialPanelProps {
-  contentId: string; // e.g., "season_xyz" or "region_0_0"
+  contentId: string;
   title: string;
 }
 
@@ -73,32 +72,32 @@ export function SocialPanel({ contentId, title }: SocialPanelProps) {
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold flex items-center gap-2">
-          <MessageSquare size={18} />
-          {title}
+        <h3 className="font-pixel text-xs text-pixel-pink">
+          💬 {title}
         </h3>
         <button
           onClick={handleLike}
           disabled={hasLiked || !profile}
-          className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-colors ${
+          className={`flex items-center gap-2 px-3 py-1 border-2 text-sm ${
             hasLiked 
-              ? 'bg-red-500/20 text-red-400' 
-              : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+              ? 'border-[--pixel-red] text-pixel-red bg-[--pixel-red]/20' 
+              : 'border-[--pixel-mid] text-[--pixel-light] hover:border-[--pixel-red] hover:text-pixel-red'
           }`}
         >
-          <Heart size={14} className={hasLiked ? 'fill-current' : ''} />
-          {likes}
+          <span>{hasLiked ? '♥' : '♡'}</span>
+          <span className="font-pixel text-[8px]">{likes}</span>
         </button>
       </div>
 
+      {/* Profile Badge */}
       {profile && (
-        <div className="flex items-center gap-2 mb-4 p-2 bg-gray-800/50 rounded-lg">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-indigo-500 flex items-center justify-center">
-            <User size={14} />
+        <div className="flex items-center gap-3 mb-4 p-3 bg-[--pixel-black] border-2 border-[--pixel-cyan]">
+          <div className="w-8 h-8 bg-[--pixel-cyan] flex items-center justify-center text-[--pixel-black] font-pixel text-xs">
+            {profile.username.charAt(0).toUpperCase()}
           </div>
-          <div className="text-sm">
-            <p className="font-semibold">{profile.username}</p>
-            <p className="text-gray-400 text-xs">{formatAddress(profile.walletAddress)}</p>
+          <div>
+            <p className="font-pixel text-[8px] text-pixel-cyan">{profile.username}</p>
+            <p className="text-xs text-[--pixel-light]">{formatAddress(profile.walletAddress)}</p>
           </div>
         </div>
       )}
@@ -110,50 +109,49 @@ export function SocialPanel({ contentId, title }: SocialPanelProps) {
             type="text"
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Share your thoughts..."
-            className="flex-1 bg-gray-800 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500"
+            placeholder="Say something..."
+            className="input-pixel flex-1 text-sm"
             onKeyPress={(e) => e.key === 'Enter' && handlePostComment()}
           />
           <button
             onClick={handlePostComment}
             disabled={loading || !newComment.trim()}
-            className="btn-primary p-2"
+            className="btn-primary px-3"
           >
-            <Send size={16} />
+            ➤
           </button>
         </div>
       )}
 
       {/* Comments List */}
-      <div className="space-y-3 max-h-64 overflow-y-auto">
+      <div className="space-y-2 max-h-48 overflow-y-auto">
         {comments.length > 0 ? (
           comments.map((comment) => (
-            <div key={comment.id} className="bg-gray-800/50 rounded-lg p-3">
+            <div key={comment.id} className="bg-[--pixel-black] p-3 border-l-4 border-[--pixel-pink]">
               <div className="flex items-center gap-2 mb-1">
-                <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center">
-                  <User size={12} />
-                </div>
-                <span className="text-sm font-medium">
+                <span className="font-pixel text-[8px] text-pixel-cyan">
                   {comment.profile?.username || formatAddress(comment.profileId)}
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-[10px] text-[--pixel-mid]">
                   {new Date(comment.createdAt).toLocaleDateString()}
                 </span>
               </div>
-              <p className="text-sm text-gray-300 ml-8">{comment.content}</p>
+              <p className="text-sm text-[--pixel-white]">{comment.content}</p>
             </div>
           ))
         ) : (
-          <p className="text-gray-400 text-sm text-center py-4">
-            No comments yet. Be the first to share!
-          </p>
+          <div className="text-center py-4">
+            <div className="text-2xl mb-2">💭</div>
+            <p className="text-[--pixel-light] text-sm">No comments yet...</p>
+          </div>
         )}
       </div>
 
       {!publicKey && (
-        <p className="text-gray-400 text-sm text-center py-4">
-          Connect wallet to join the conversation
-        </p>
+        <div className="text-center py-4 border-2 border-dashed border-[--pixel-mid]">
+          <div className="text-2xl mb-2">🔌</div>
+          <p className="text-[--pixel-light] text-sm">Connect wallet to chat</p>
+        </div>
       )}
     </div>
   );

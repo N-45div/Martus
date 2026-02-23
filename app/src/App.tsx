@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
@@ -9,6 +9,8 @@ import { CanvasGrid } from './components/CanvasGrid';
 import { RegionPanel } from './components/RegionPanel';
 import { ActivityFeed } from './components/ActivityFeed';
 import { CreateSeasonModal } from './components/CreateSeasonModal';
+import { SocialPanel } from './components/SocialPanel';
+import { HelpModal } from './components/HelpModal';
 import { useProgram } from './hooks/useProgram';
 import type { Region } from './types';
 
@@ -29,6 +31,17 @@ function CollabCanvas() {
 
   const [selectedRegion, setSelectedRegion] = useState<{ x: number; y: number } | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [activeTab, setActiveTab] = useState<'region' | 'social'>('region');
+
+  // Show help on first visit
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('martus_tour_seen');
+    if (!hasSeenTour) {
+      setShowHelp(true);
+      localStorage.setItem('martus_tour_seen', 'true');
+    }
+  }, []);
 
   const selectedRegionData = selectedRegion
     ? regions.get(`${selectedRegion.x}-${selectedRegion.y}`)
@@ -93,6 +106,12 @@ function CollabCanvas() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowHelp(true)}
+              className="px-3 py-2 border-2 border-[--pixel-yellow] text-pixel-yellow hover:bg-[--pixel-yellow] hover:text-[--pixel-black] font-pixel text-[8px]"
+            >
+              ❓ HELP
+            </button>
             <div className="hidden md:flex items-center gap-2 text-sm">
               <span className="text-pixel-green">●</span>
               <span>DEVNET</span>
@@ -180,29 +199,70 @@ function CollabCanvas() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {selectedRegion ? (
-              <RegionPanel
-                x={selectedRegion.x}
-                y={selectedRegion.y}
-                region={selectedRegionData}
-                bids={[]}
-                phase={phase}
-                onFund={handleFund}
-                onSubmitBid={handleSubmitBid}
-                onVote={handleVote}
-                onClose={() => setSelectedRegion(null)}
-              />
-            ) : (
-              <div className="card">
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-4">👆</div>
-                  <p className="font-pixel text-xs text-pixel-cyan">SELECT A REGION</p>
-                  <p className="mt-2 text-sm text-[--pixel-light]">Click on any grid cell to fund or bid</p>
-                </div>
-              </div>
-            )}
+            {/* Tab Buttons */}
+            <div className="flex border-2 border-[--pixel-mid]">
+              <button
+                onClick={() => setActiveTab('region')}
+                className={`flex-1 py-2 font-pixel text-[8px] ${
+                  activeTab === 'region'
+                    ? 'bg-[--pixel-cyan] text-[--pixel-black]'
+                    : 'bg-[--pixel-dark] text-[--pixel-light] hover:bg-[--pixel-mid]'
+                }`}
+              >
+                📍 REGION
+              </button>
+              <button
+                onClick={() => setActiveTab('social')}
+                className={`flex-1 py-2 font-pixel text-[8px] ${
+                  activeTab === 'social'
+                    ? 'bg-[--pixel-pink] text-[--pixel-black]'
+                    : 'bg-[--pixel-dark] text-[--pixel-light] hover:bg-[--pixel-mid]'
+                }`}
+              >
+                💬 SOCIAL
+              </button>
+            </div>
 
-            <ActivityFeed activities={activities} />
+            {/* Tab Content */}
+            {activeTab === 'region' ? (
+              <>
+                {selectedRegion ? (
+                  <RegionPanel
+                    x={selectedRegion.x}
+                    y={selectedRegion.y}
+                    region={selectedRegionData}
+                    bids={[]}
+                    phase={phase}
+                    onFund={handleFund}
+                    onSubmitBid={handleSubmitBid}
+                    onVote={handleVote}
+                    onClose={() => setSelectedRegion(null)}
+                  />
+                ) : (
+                  <div className="card">
+                    <div className="text-center py-8">
+                      <div className="text-4xl mb-4">👆</div>
+                      <p className="font-pixel text-xs text-pixel-cyan">SELECT A REGION</p>
+                      <p className="mt-2 text-sm text-[--pixel-light]">Click on any grid cell to fund or bid</p>
+                    </div>
+                  </div>
+                )}
+                <ActivityFeed activities={activities} />
+              </>
+            ) : (
+              <>
+                <SocialPanel
+                  contentId={season ? `season_${season.publicKey.toBase58().slice(0, 8)}` : 'global'}
+                  title="CANVAS CHAT"
+                />
+                {selectedRegion && (
+                  <SocialPanel
+                    contentId={`region_${selectedRegion.x}_${selectedRegion.y}`}
+                    title={`REGION [${selectedRegion.x},${selectedRegion.y}]`}
+                  />
+                )}
+              </>
+            )}
           </div>
         </div>
       </main>
@@ -224,6 +284,11 @@ function CollabCanvas() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreate={handleCreateSeason}
+      />
+
+      <HelpModal
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
       />
     </div>
   );
