@@ -1,0 +1,22 @@
+[toolchain]
+package_manager = "npm"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+collab_canvas = "bk3AL2Qz3RAg1mRLJWu8E2iA8NNVf7a3hAoF1L5p7t2"
+
+[programs.devnet]
+collab_canvas = "bk3AL2Qz3RAg1mRLJWu8E2iA8NNVf7a3hAoF1L5p7t2"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
