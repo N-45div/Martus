@@ -1,59 +1,230 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --color-primary: #10b981;
-    --color-primary-dark: #059669;
-    --color-secondary: #6366f1;
-    --color-accent: #f59e0b;
-    --color-bg: #0f0f0f;
-    --color-surface: #1a1a1a;
-    --color-surface-light: #2a2a2a;
-  }
-
-  body {
-    @apply bg-[--color-bg] text-white font-sans antialiased;
-  }
+:root {
+  --pixel-black: #0d0d0d;
+  --pixel-dark: #1a1a2e;
+  --pixel-mid: #2d2d44;
+  --pixel-light: #4a4a6a;
+  --pixel-white: #e8e8e8;
+  --pixel-red: #ff004d;
+  --pixel-orange: #ffa300;
+  --pixel-yellow: #ffec27;
+  --pixel-green: #00e436;
+  --pixel-cyan: #29adff;
+  --pixel-blue: #1d2b53;
+  --pixel-purple: #7e2553;
+  --pixel-pink: #ff77a8;
 }
 
-@layer components {
-  .btn-primary {
-    @apply bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors;
-  }
+* {
+  image-rendering: pixelated;
+}
 
-  .btn-secondary {
-    @apply bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors;
-  }
+body {
+  font-family: 'VT323', monospace;
+  background-color: var(--pixel-black);
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.02) 2px,
+      rgba(255,255,255,0.02) 4px
+    );
+  color: var(--pixel-white);
+  min-height: 100vh;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+}
 
-  .card {
-    @apply bg-[--color-surface] rounded-xl p-4 border border-white/10;
-  }
+.font-pixel {
+  font-family: 'Press Start 2P', cursive;
+}
 
-  .region-cell {
-    @apply aspect-square rounded-lg transition-all cursor-pointer hover:scale-105;
-  }
+.font-terminal {
+  font-family: 'VT323', monospace;
+}
 
-  .region-empty {
-    @apply bg-gray-800/50 border-2 border-dashed border-gray-600 hover:border-emerald-500;
-  }
+.pixel-border {
+  border: 4px solid var(--pixel-light);
+  box-shadow: 
+    4px 4px 0 var(--pixel-dark),
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    inset 2px 2px 0 rgba(255,255,255,0.1);
+}
 
-  .region-funded {
-    @apply bg-gradient-to-br from-emerald-900/50 to-emerald-700/30 border-2 border-emerald-500/50;
-  }
+.pixel-border-accent {
+  border: 4px solid var(--pixel-cyan);
+  box-shadow: 
+    4px 4px 0 var(--pixel-blue),
+    0 0 20px rgba(41, 173, 255, 0.3);
+}
 
-  .region-voting {
-    @apply bg-gradient-to-br from-indigo-900/50 to-indigo-700/30 border-2 border-indigo-500/50 animate-pulse;
-  }
+.card {
+  background: var(--pixel-dark);
+  border: 4px solid var(--pixel-mid);
+  box-shadow: 6px 6px 0 var(--pixel-black);
+  padding: 16px;
+}
 
-  .region-painted {
-    @apply border-2 border-amber-500/50;
-  }
+.btn-primary {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  background: var(--pixel-green);
+  color: var(--pixel-black);
+  border: 4px solid #00b82e;
+  box-shadow: 4px 4px 0 var(--pixel-black);
+  padding: 12px 20px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn-primary:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--pixel-black);
+}
+
+.btn-primary:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+
+.btn-secondary {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  background: var(--pixel-cyan);
+  color: var(--pixel-black);
+  border: 4px solid #1a8ac7;
+  box-shadow: 4px 4px 0 var(--pixel-black);
+  padding: 12px 20px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn-secondary:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--pixel-black);
+}
+
+.btn-danger {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  background: var(--pixel-red);
+  color: var(--pixel-white);
+  border: 4px solid #cc003d;
+  box-shadow: 4px 4px 0 var(--pixel-black);
+  padding: 12px 20px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.region-cell {
+  aspect-ratio: 1;
+  border: 3px solid var(--pixel-mid);
+  background: var(--pixel-dark);
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.1s;
+  position: relative;
+}
+
+.region-cell:hover {
+  transform: scale(1.05);
+  border-color: var(--pixel-cyan);
+  z-index: 10;
+}
+
+.region-empty {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--pixel-dark),
+    var(--pixel-dark) 4px,
+    var(--pixel-mid) 4px,
+    var(--pixel-mid) 8px
+  );
+  border-style: dashed;
+}
+
+.region-funded {
+  background: var(--pixel-green);
+  border-color: #00b82e;
+  box-shadow: inset 0 0 10px rgba(0,228,54,0.5);
+}
+
+.region-voting {
+  background: var(--pixel-orange);
+  border-color: #cc8200;
+  animation: pixel-blink 1s infinite;
+}
+
+.region-painted {
+  background: var(--pixel-purple);
+  border-color: var(--pixel-pink);
+}
+
+@keyframes pixel-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.input-pixel {
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  background: var(--pixel-black);
+  border: 3px solid var(--pixel-mid);
+  color: var(--pixel-white);
+  padding: 10px 14px;
+  outline: none;
+}
+
+.input-pixel:focus {
+  border-color: var(--pixel-cyan);
+  box-shadow: 0 0 10px rgba(41, 173, 255, 0.4);
 }
 
 .wallet-adapter-button {
-  @apply !bg-emerald-500 hover:!bg-emerald-600 !rounded-lg;
+  font-family: 'Press Start 2P', cursive !important;
+  font-size: 9px !important;
+  background: var(--pixel-purple) !important;
+  border: 3px solid var(--pixel-pink) !important;
+  box-shadow: 3px 3px 0 var(--pixel-black) !important;
+  border-radius: 0 !important;
+  text-transform: uppercase !important;
+}
+
+.wallet-adapter-button:hover {
+  background: var(--pixel-pink) !important;
 }
 
 .wallet-adapter-modal-wrapper {
-  @apply !bg-[--color-surface];
+  background: var(--pixel-dark) !important;
+  border: 4px solid var(--pixel-mid) !important;
+}
+
+.text-pixel-green { color: var(--pixel-green); }
+.text-pixel-red { color: var(--pixel-red); }
+.text-pixel-cyan { color: var(--pixel-cyan); }
+.text-pixel-yellow { color: var(--pixel-yellow); }
+.text-pixel-orange { color: var(--pixel-orange); }
+.text-pixel-pink { color: var(--pixel-pink); }
+
+.bg-pixel-dark { background: var(--pixel-dark); }
+.bg-pixel-mid { background: var(--pixel-mid); }
+
+.scanlines {
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1),
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  z-index: 9999;
 }

@@ -59,7 +59,6 @@ function CollabCanvas() {
   };
 
   const handleVote = async (bidPubkey: string) => {
-    // TODO: Implement vote
     console.log('Vote for bid:', bidPubkey);
   };
 
@@ -79,34 +78,68 @@ function CollabCanvas() {
   };
 
   return (
-    <div className="min-h-screen bg-[--color-bg]">
+    <div className="min-h-screen">
+      {/* Scanlines overlay */}
+      <div className="scanlines" />
+
       {/* Header */}
-      <header className="border-b border-white/10 bg-[--color-surface]">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-indigo-500 flex items-center justify-center text-xl font-bold">
-              🎨
-            </div>
+      <header className="border-b-4 border-[--pixel-mid] bg-[--pixel-dark]">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="text-3xl">🎮</div>
             <div>
-              <h1 className="text-xl font-bold">Collab Canvas</h1>
-              <p className="text-xs text-gray-400">Onchain Collaborative Art</p>
+              <h1 className="font-pixel text-lg text-pixel-cyan tracking-wider">MARTUS</h1>
+              <p className="text-sm text-[--pixel-light] mt-1">[ COLLABORATIVE PIXEL CANVAS ]</p>
             </div>
           </div>
-          <WalletMultiButton />
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-2 text-sm">
+              <span className="text-pixel-green">●</span>
+              <span>DEVNET</span>
+            </div>
+            <WalletMultiButton />
+          </div>
         </div>
       </header>
 
+      {/* Stats Bar */}
+      <div className="bg-[--pixel-blue] border-b-4 border-[--pixel-dark] py-2">
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between text-sm">
+          <div className="flex items-center gap-6">
+            <span><span className="text-pixel-yellow">REGIONS:</span> 64</span>
+            <span><span className="text-pixel-green">FUNDED:</span> {Array.from(regions.values()).filter(r => r.totalFunded > 0).length}</span>
+            <span><span className="text-pixel-orange">PHASE:</span> {phase.toUpperCase()}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-pixel-pink">♥</span>
+            <span>PLACE YOUR PIXELS</span>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-6 py-8">
         {error && (
-          <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 text-red-200">
-            {error}
+          <div className="card border-[--pixel-red] mb-6">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚠</span>
+              <span className="text-pixel-red">{error}</span>
+            </div>
           </div>
         )}
 
         {loading && (
-          <div className="text-center py-4">
-            <div className="animate-spin w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full mx-auto" />
+          <div className="text-center py-8">
+            <div className="font-pixel text-pixel-cyan animate-pulse">LOADING...</div>
+            <div className="mt-4 flex justify-center gap-1">
+              {[0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  className="w-4 h-4 bg-pixel-cyan"
+                  style={{ animation: `pixel-blink 0.5s ${i * 0.15}s infinite` }}
+                />
+              ))}
+            </div>
           </div>
         )}
 
@@ -115,18 +148,39 @@ function CollabCanvas() {
           onCreateSeason={() => setShowCreateModal(true)}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Canvas */}
           <div className="lg:col-span-2">
-            <CanvasGrid
-              regions={regions}
-              phase={phase}
-              onRegionClick={handleRegionClick}
-              selectedRegion={selectedRegion}
-            />
+            <div className="card pixel-border-accent">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-pixel text-sm text-pixel-cyan">CANVAS</h2>
+                <div className="flex items-center gap-4 text-xs">
+                  <span className="flex items-center gap-2">
+                    <span className="w-3 h-3 region-empty" /> EMPTY
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-[--pixel-green]" /> FUNDED
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-[--pixel-orange]" /> VOTING
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-[--pixel-purple]" /> PAINTED
+                  </span>
+                </div>
+              </div>
+              <CanvasGrid
+                regions={regions}
+                phase={phase}
+                onRegionClick={handleRegionClick}
+                selectedRegion={selectedRegion}
+              />
+            </div>
           </div>
 
+          {/* Sidebar */}
           <div className="space-y-6">
-            {selectedRegion && (
+            {selectedRegion ? (
               <RegionPanel
                 x={selectedRegion.x}
                 y={selectedRegion.y}
@@ -138,6 +192,14 @@ function CollabCanvas() {
                 onVote={handleVote}
                 onClose={() => setSelectedRegion(null)}
               />
+            ) : (
+              <div className="card">
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">👆</div>
+                  <p className="font-pixel text-xs text-pixel-cyan">SELECT A REGION</p>
+                  <p className="mt-2 text-sm text-[--pixel-light]">Click on any grid cell to fund or bid</p>
+                </div>
+              </div>
             )}
 
             <ActivityFeed activities={activities} />
@@ -146,10 +208,15 @@ function CollabCanvas() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-6 mt-12">
-        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-400">
-          <p>Built for Solana Graveyard Hackathon 2026</p>
-          <p className="mt-1">Art Track • Exchange Art Bounty</p>
+      <footer className="border-t-4 border-[--pixel-mid] py-6 mt-12 bg-[--pixel-dark]">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="font-pixel text-xs text-pixel-purple">SOLANA HACKATHON 2026</p>
+          <p className="mt-2 text-sm text-[--pixel-light]">Powered by Tapestry Protocol</p>
+          <div className="mt-4 flex justify-center gap-4 text-xl">
+            <span>🎨</span>
+            <span>⛓️</span>
+            <span>🎮</span>
+          </div>
         </div>
       </footer>
 

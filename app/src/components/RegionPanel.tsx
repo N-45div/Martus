@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { Region, Bid, Contribution, SeasonPhase } from '../types';
 import { lamportsToSol, formatAddress } from '../lib/program';
-import { Coins, Send, Vote, Trophy, Image } from 'lucide-react';
 
 interface RegionPanelProps {
   x: number;
@@ -49,53 +48,52 @@ export function RegionPanel({
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold">
-          Region ({x}, {y})
+        <h3 className="font-pixel text-xs text-pixel-cyan">
+          REGION [{x},{y}]
         </h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-white">
-          ✕
+        <button onClick={onClose} className="text-[--pixel-light] hover:text-pixel-red text-xl">
+          ×
         </button>
       </div>
 
       {region ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-400">Total Funded</span>
-              <p className="text-emerald-400 font-bold text-lg">
-                {lamportsToSol(region.totalFunded).toFixed(4)} SOL
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-[--pixel-black] p-3 border-2 border-[--pixel-mid]">
+              <span className="text-xs text-[--pixel-light]">TOTAL POOL</span>
+              <p className="text-pixel-green font-pixel text-sm mt-1">
+                {lamportsToSol(region.totalFunded).toFixed(2)} ◎
               </p>
             </div>
-            <div>
-              <span className="text-gray-400">Contributors</span>
-              <p className="text-white font-bold text-lg">{region.contributorCount}</p>
+            <div className="bg-[--pixel-black] p-3 border-2 border-[--pixel-mid]">
+              <span className="text-xs text-[--pixel-light]">PLAYERS</span>
+              <p className="text-pixel-cyan font-pixel text-sm mt-1">{region.contributorCount}</p>
             </div>
           </div>
 
           {myContribution && (
-            <div className="bg-emerald-900/30 rounded-lg p-3">
-              <span className="text-sm text-gray-400">Your Contribution</span>
-              <p className="text-emerald-400 font-bold">
-                {lamportsToSol(myContribution.amount).toFixed(4)} SOL
+            <div className="bg-[--pixel-green] bg-opacity-20 p-3 border-2 border-[--pixel-green]">
+              <span className="text-xs text-[--pixel-light]">YOUR STAKE</span>
+              <p className="text-pixel-green font-pixel text-sm mt-1">
+                {lamportsToSol(myContribution.amount).toFixed(4)} ◎
               </p>
             </div>
           )}
 
           {phase === 'funding' && (
-            <div className="space-y-2">
-              <label className="text-sm text-gray-400">Add Funding (SOL)</label>
+            <div className="space-y-3 border-t-2 border-[--pixel-mid] pt-4">
+              <label className="text-xs text-[--pixel-light]">► ADD FUNDS (SOL)</label>
               <div className="flex gap-2">
                 <input
                   type="number"
                   value={fundAmount}
                   onChange={(e) => setFundAmount(e.target.value)}
-                  className="flex-1 bg-gray-800 rounded-lg px-3 py-2 text-white"
+                  className="input-pixel flex-1"
                   min="0.001"
                   step="0.01"
                 />
-                <button onClick={handleFund} className="btn-primary flex items-center gap-2">
-                  <Coins size={16} />
-                  Fund
+                <button onClick={handleFund} className="btn-primary">
+                  💰 FUND
                 </button>
               </div>
             </div>
@@ -103,72 +101,71 @@ export function RegionPanel({
 
           {phase === 'voting' && (
             <>
-              <div className="border-t border-white/10 pt-4">
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <Vote size={16} />
-                  Artist Bids ({bids.length})
+              <div className="border-t-2 border-[--pixel-mid] pt-4">
+                <h4 className="font-pixel text-xs text-pixel-orange mb-3">
+                  🎨 BIDS ({bids.length})
                 </h4>
                 {bids.length > 0 ? (
                   <div className="space-y-2">
                     {bids.map((bid) => (
                       <div
                         key={bid.publicKey.toBase58()}
-                        className="bg-gray-800 rounded-lg p-3 flex items-center justify-between"
+                        className="bg-[--pixel-black] p-3 border-2 border-[--pixel-mid]"
                       >
-                        <div>
-                          <p className="text-sm font-mono text-gray-300">
-                            {formatAddress(bid.artist)}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            Asking: {lamportsToSol(bid.requestedAmount).toFixed(2)} SOL
-                          </p>
-                          <p className="text-xs text-indigo-400">
-                            Votes: {bid.voteCount} ({lamportsToSol(bid.voteWeight).toFixed(2)} SOL weight)
-                          </p>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-xs text-[--pixel-light]">
+                              {formatAddress(bid.artist)}
+                            </p>
+                            <p className="text-pixel-yellow text-sm mt-1">
+                              ASK: {lamportsToSol(bid.requestedAmount).toFixed(2)} ◎
+                            </p>
+                            <p className="text-pixel-cyan text-xs">
+                              VOTES: {bid.voteCount}
+                            </p>
+                          </div>
+                          {myContribution && !myContribution.hasVoted && (
+                            <button
+                              onClick={() => onVote(bid.publicKey.toBase58())}
+                              className="btn-secondary text-xs"
+                            >
+                              VOTE
+                            </button>
+                          )}
+                          {bid.isWinner && (
+                            <span className="text-2xl">🏆</span>
+                          )}
                         </div>
-                        {myContribution && !myContribution.hasVoted && (
-                          <button
-                            onClick={() => onVote(bid.publicKey.toBase58())}
-                            className="btn-secondary text-sm"
-                          >
-                            Vote
-                          </button>
-                        )}
-                        {bid.isWinner && (
-                          <Trophy className="text-amber-400" size={20} />
-                        )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-400 text-sm">No bids yet</p>
+                  <p className="text-[--pixel-light] text-sm">No bids yet...</p>
                 )}
               </div>
 
-              <div className="border-t border-white/10 pt-4">
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <Image size={16} />
-                  Submit Your Bid
+              <div className="border-t-2 border-[--pixel-mid] pt-4">
+                <h4 className="font-pixel text-xs text-pixel-pink mb-3">
+                  ✏️ SUBMIT BID
                 </h4>
                 <div className="space-y-2">
                   <input
                     type="text"
-                    placeholder="Sketch URI (IPFS or URL)"
+                    placeholder="IPFS URI or URL"
                     value={sketchUri}
                     onChange={(e) => setSketchUri(e.target.value)}
-                    className="w-full bg-gray-800 rounded-lg px-3 py-2 text-white"
+                    className="input-pixel w-full"
                   />
                   <div className="flex gap-2">
                     <input
                       type="number"
-                      placeholder="Request amount (SOL)"
+                      placeholder="Amount"
                       value={bidAmount}
                       onChange={(e) => setBidAmount(e.target.value)}
-                      className="flex-1 bg-gray-800 rounded-lg px-3 py-2 text-white"
+                      className="input-pixel flex-1"
                     />
-                    <button onClick={handleSubmitBid} className="btn-secondary flex items-center gap-2">
-                      <Send size={16} />
-                      Submit
+                    <button onClick={handleSubmitBid} className="btn-secondary">
+                      SEND
                     </button>
                   </div>
                 </div>
@@ -177,34 +174,36 @@ export function RegionPanel({
           )}
 
           {region.isPainted && region.finalArtUri && (
-            <div className="border-t border-white/10 pt-4">
-              <h4 className="font-semibold mb-2">Final Artwork</h4>
+            <div className="border-t-2 border-[--pixel-mid] pt-4">
+              <h4 className="font-pixel text-xs text-pixel-purple mb-2">★ ARTWORK</h4>
               <img
                 src={region.finalArtUri}
                 alt="Final artwork"
-                className="w-full rounded-lg"
+                className="w-full border-4 border-[--pixel-purple]"
               />
             </div>
           )}
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-gray-400">This region has no funding yet.</p>
+          <div className="text-center py-4">
+            <div className="text-4xl mb-2">📍</div>
+            <p className="text-[--pixel-light]">Empty region - be first to claim!</p>
+          </div>
           {phase === 'funding' && (
-            <div className="space-y-2">
-              <label className="text-sm text-gray-400">Be the first to fund! (SOL)</label>
+            <div className="space-y-3">
+              <label className="text-xs text-[--pixel-light]">► STAKE SOL</label>
               <div className="flex gap-2">
                 <input
                   type="number"
                   value={fundAmount}
                   onChange={(e) => setFundAmount(e.target.value)}
-                  className="flex-1 bg-gray-800 rounded-lg px-3 py-2 text-white"
+                  className="input-pixel flex-1"
                   min="0.001"
                   step="0.01"
                 />
-                <button onClick={handleFund} className="btn-primary flex items-center gap-2">
-                  <Coins size={16} />
-                  Fund
+                <button onClick={handleFund} className="btn-primary">
+                  💰 FUND
                 </button>
               </div>
             </div>
