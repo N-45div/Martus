@@ -1,0 +1,733 @@
+{
+  "address": "bk3AL2Qz3RAg1mRLJWu8E2iA8NNVf7a3hAoF1L5p7t2",
+  "metadata": {
+    "name": "collab_canvas",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "claim_artist_payout",
+      "docs": [
+        "Claim artist payout"
+      ],
+      "discriminator": [
+        52,
+        132,
+        139,
+        180,
+        42,
+        1,
+        161,
+        248
+      ],
+      "accounts": [
+        {
+          "name": "region"
+        },
+        {
+          "name": "region_vault",
+          "writable": true
+        },
+        {
+          "name": "bid"
+        },
+        {
+          "name": "artist",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_season",
+      "docs": [
+        "Create a new season (canvas)"
+      ],
+      "discriminator": [
+        38,
+        108,
+        29,
+        127,
+        60,
+        126,
+        101,
+        3
+      ],
+      "accounts": [
+        {
+          "name": "season",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  97,
+                  115,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "arg",
+                "path": "title"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
+        },
+        {
+          "name": "funding_end_ts",
+          "type": "i64"
+        },
+        {
+          "name": "voting_end_ts",
+          "type": "i64"
+        },
+        {
+          "name": "min_funding_per_region",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "finalize_region",
+      "docs": [
+        "Finalize a region - select winning bid"
+      ],
+      "discriminator": [
+        192,
+        215,
+        124,
+        190,
+        236,
+        213,
+        68,
+        204
+      ],
+      "accounts": [
+        {
+          "name": "season"
+        },
+        {
+          "name": "region",
+          "writable": true
+        },
+        {
+          "name": "bid",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "finalize_season",
+      "docs": [
+        "Finalize season - mark as complete"
+      ],
+      "discriminator": [
+        183,
+        221,
+        183,
+        7,
+        73,
+        215,
+        158,
+        50
+      ],
+      "accounts": [
+        {
+          "name": "season",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "final_nft_uri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "fund_region",
+      "docs": [
+        "Fund a region on the canvas"
+      ],
+      "discriminator": [
+        62,
+        66,
+        120,
+        30,
+        9,
+        127,
+        218,
+        168
+      ],
+      "accounts": [
+        {
+          "name": "season",
+          "writable": true
+        },
+        {
+          "name": "region",
+          "writable": true
+        },
+        {
+          "name": "region_vault",
+          "writable": true
+        },
+        {
+          "name": "contribution",
+          "writable": true
+        },
+        {
+          "name": "funder",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "region_x",
+          "type": "u8"
+        },
+        {
+          "name": "region_y",
+          "type": "u8"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "submit_bid",
+      "docs": [
+        "Artist submits a bid for a region"
+      ],
+      "discriminator": [
+        19,
+        164,
+        237,
+        254,
+        64,
+        139,
+        237,
+        93
+      ],
+      "accounts": [
+        {
+          "name": "season"
+        },
+        {
+          "name": "region"
+        },
+        {
+          "name": "bid",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  105,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "region"
+              },
+              {
+                "kind": "account",
+                "path": "artist"
+              }
+            ]
+          }
+        },
+        {
+          "name": "artist",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "sketch_uri",
+          "type": "string"
+        },
+        {
+          "name": "requested_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "submit_final_art",
+      "docs": [
+        "Winning artist submits final artwork"
+      ],
+      "discriminator": [
+        51,
+        148,
+        210,
+        73,
+        85,
+        167,
+        91,
+        135
+      ],
+      "accounts": [
+        {
+          "name": "region",
+          "writable": true
+        },
+        {
+          "name": "bid",
+          "writable": true
+        },
+        {
+          "name": "artist",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "final_art_uri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "vote_for_bid",
+      "docs": [
+        "Contributor votes for a bid"
+      ],
+      "discriminator": [
+        2,
+        32,
+        248,
+        111,
+        47,
+        234,
+        129,
+        120
+      ],
+      "accounts": [
+        {
+          "name": "season"
+        },
+        {
+          "name": "region"
+        },
+        {
+          "name": "bid",
+          "writable": true
+        },
+        {
+          "name": "contribution",
+          "writable": true
+        },
+        {
+          "name": "voter",
+          "signer": true
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Bid",
+      "discriminator": [
+        143,
+        246,
+        48,
+        245,
+        42,
+        145,
+        180,
+        88
+      ]
+    },
+    {
+      "name": "Contribution",
+      "discriminator": [
+        182,
+        187,
+        14,
+        111,
+        72,
+        167,
+        242,
+        212
+      ]
+    },
+    {
+      "name": "Region",
+      "discriminator": [
+        80,
+        47,
+        23,
+        41,
+        58,
+        147,
+        227,
+        165
+      ]
+    },
+    {
+      "name": "Season",
+      "discriminator": [
+        76,
+        67,
+        93,
+        156,
+        180,
+        157,
+        248,
+        47
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "TitleTooLong",
+      "msg": "Title too long"
+    },
+    {
+      "code": 6001,
+      "name": "DescriptionTooLong",
+      "msg": "Description too long"
+    },
+    {
+      "code": 6002,
+      "name": "UriTooLong",
+      "msg": "URI too long"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidTimestamp",
+      "msg": "Invalid timestamp"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidRegion",
+      "msg": "Invalid region coordinates"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidAmount",
+      "msg": "Invalid amount"
+    },
+    {
+      "code": 6006,
+      "name": "SeasonFinalized",
+      "msg": "Season is finalized"
+    },
+    {
+      "code": 6007,
+      "name": "FundingEnded",
+      "msg": "Funding period ended"
+    },
+    {
+      "code": 6008,
+      "name": "FundingNotEnded",
+      "msg": "Funding period not ended"
+    },
+    {
+      "code": 6009,
+      "name": "VotingEnded",
+      "msg": "Voting period ended"
+    },
+    {
+      "code": 6010,
+      "name": "VotingNotEnded",
+      "msg": "Voting period not ended"
+    },
+    {
+      "code": 6011,
+      "name": "InsufficientFunding",
+      "msg": "Insufficient funding for region"
+    },
+    {
+      "code": 6012,
+      "name": "BidTooHigh",
+      "msg": "Bid amount exceeds region funding"
+    },
+    {
+      "code": 6013,
+      "name": "AlreadyVoted",
+      "msg": "Already voted"
+    },
+    {
+      "code": 6014,
+      "name": "NoVotes",
+      "msg": "No votes received"
+    },
+    {
+      "code": 6015,
+      "name": "AlreadyFinalized",
+      "msg": "Region already finalized"
+    },
+    {
+      "code": 6016,
+      "name": "NotWinner",
+      "msg": "Not the winning bid"
+    },
+    {
+      "code": 6017,
+      "name": "AlreadySubmitted",
+      "msg": "Art already submitted"
+    },
+    {
+      "code": 6018,
+      "name": "ArtNotSubmitted",
+      "msg": "Art not submitted yet"
+    }
+  ],
+  "types": [
+    {
+      "name": "Bid",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "region",
+            "type": "pubkey"
+          },
+          {
+            "name": "artist",
+            "type": "pubkey"
+          },
+          {
+            "name": "sketch_uri",
+            "type": "string"
+          },
+          {
+            "name": "requested_amount",
+            "type": "u64"
+          },
+          {
+            "name": "vote_count",
+            "type": "u32"
+          },
+          {
+            "name": "vote_weight",
+            "type": "u64"
+          },
+          {
+            "name": "final_art_uri",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "is_winner",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Contribution",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "region",
+            "type": "pubkey"
+          },
+          {
+            "name": "contributor",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "has_voted",
+            "type": "bool"
+          },
+          {
+            "name": "voted_bid",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Region",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "season",
+            "type": "pubkey"
+          },
+          {
+            "name": "x",
+            "type": "u8"
+          },
+          {
+            "name": "y",
+            "type": "u8"
+          },
+          {
+            "name": "total_funded",
+            "type": "u64"
+          },
+          {
+            "name": "contributor_count",
+            "type": "u32"
+          },
+          {
+            "name": "winning_bid",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "is_painted",
+            "type": "bool"
+          },
+          {
+            "name": "final_art_uri",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "vault_bump",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Season",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "name": "funding_end_ts",
+            "type": "i64"
+          },
+          {
+            "name": "voting_end_ts",
+            "type": "i64"
+          },
+          {
+            "name": "min_funding_per_region",
+            "type": "u64"
+          },
+          {
+            "name": "total_funded",
+            "type": "u64"
+          },
+          {
+            "name": "regions_funded",
+            "type": "u8"
+          },
+          {
+            "name": "is_finalized",
+            "type": "bool"
+          },
+          {
+            "name": "final_nft_mint",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "final_nft_uri",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-primary: #10b981;
+    --color-primary-dark: #059669;
+    --color-secondary: #6366f1;
+    --color-accent: #f59e0b;
+    --color-bg: #0f0f0f;
+    --color-surface: #1a1a1a;
+    --color-surface-light: #2a2a2a;
+  }
+
+  body {
+    @apply bg-[--color-bg] text-white font-sans antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors;
+  }
+
+  .card {
+    @apply bg-[--color-surface] rounded-xl p-4 border border-white/10;
+  }
+
+  .region-cell {
+    @apply aspect-square rounded-lg transition-all cursor-pointer hover:scale-105;
+  }
+
+  .region-empty {
+    @apply bg-gray-800/50 border-2 border-dashed border-gray-600 hover:border-emerald-500;
+  }
+
+  .region-funded {
+    @apply bg-gradient-to-br from-emerald-900/50 to-emerald-700/30 border-2 border-emerald-500/50;
+  }
+
+  .region-voting {
+    @apply bg-gradient-to-br from-indigo-900/50 to-indigo-700/30 border-2 border-indigo-500/50 animate-pulse;
+  }
+
+  .region-painted {
+    @apply border-2 border-amber-500/50;
+  }
+}
+
+.wallet-adapter-button {
+  @apply !bg-emerald-500 hover:!bg-emerald-600 !rounded-lg;
+}
+
+.wallet-adapter-modal-wrapper {
+  @apply !bg-[--color-surface];
+}
