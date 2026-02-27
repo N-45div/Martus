@@ -4,6 +4,34 @@
 
 const API_BASE = '/api/tapestry';
 
+const fallbackDate = () => new Date().toISOString();
+
+const normalizeDate = (value?: string | number | null): string => {
+  if (!value) return fallbackDate();
+  if (typeof value === 'number') {
+    const ms = value > 1e12 ? value : value * 1000;
+    return new Date(ms).toISOString();
+  }
+  return value;
+};
+
+const normalizeProfile = (input: any, walletFallback = ''): TapestryProfile | null => {
+  if (!input) return null;
+  const profile = input.profile ?? input;
+  const walletAddress = input.walletAddress || input.wallet?.address || walletFallback || '';
+  const username = profile.username || input.username || walletAddress.slice(0, 8) || 'anon';
+  return {
+    id: profile.id || input.id || walletAddress,
+    walletAddress,
+    username,
+    bio: profile.bio || input.bio || '',
+    image: profile.image || input.image || profile.profileImage || input.profileImage || '',
+    createdAt: normalizeDate(profile.created_at || profile.createdAt || input.createdAt),
+    followerCount: input.followerCount,
+    followingCount: input.followingCount,
+  };
+};
+
 // ==================== TYPES ====================
 
 export interface TapestryProfile {
@@ -67,14 +95,14 @@ async function tapestryFetch<T = unknown>(endpoint: string, options: RequestInit
 
 export async function getOrCreateProfile(walletAddress: string, username?: string): Promise<TapestryProfile | null> {
   try {
-    const result = await tapestryFetch<TapestryProfile>('/profiles/findOrCreate', {
+    const result = await tapestryFetch<any>('/profiles/findOrCreate', {
       method: 'POST',
       body: JSON.stringify({
         walletAddress,
         username: username || `artist_${walletAddress.slice(0, 8)}`,
       }),
     });
-    return result;
+    return normalizeProfile(result, walletAddress);
   } catch (error) {
     console.error('Get/create profile error:', error);
     return null;
@@ -83,7 +111,8 @@ export async function getOrCreateProfile(walletAddress: string, username?: strin
 
 export async function getProfile(walletAddress: string): Promise<TapestryProfile | null> {
   try {
-    return await tapestryFetch<TapestryProfile>(`/profiles/${walletAddress}`);
+    const result = await tapestryFetch<any>(`/profiles/${walletAddress}`);
+    return normalizeProfile(result, walletAddress);
   } catch (error) {
     console.error('Get profile error:', error);
     return null;
@@ -95,10 +124,11 @@ export async function updateProfile(
   updates: { username?: string; bio?: string; image?: string }
 ): Promise<TapestryProfile | null> {
   try {
-    return await tapestryFetch<TapestryProfile>(`/profiles/${profileId}`, {
+    const result = await tapestryFetch<any>(`/profiles/${profileId}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
+    return normalizeProfile(result, profileId);
   } catch (error) {
     console.error('Update profile error:', error);
     return null;
@@ -107,8 +137,8 @@ export async function updateProfile(
 
 export async function searchProfiles(query: string): Promise<TapestryProfile[]> {
   try {
-    const result = await tapestryFetch<{ profiles: TapestryProfile[] }>(`/profiles/search?query=${encodeURIComponent(query)}`);
-    return result.profiles || [];
+    const result = await tapestryFetch<{ profiles?: any[] }>(`/profiles/search?query=${encodeURIComponent(query)}`);
+    return (result.profiles || []).map(profile => normalizeProfile(profile)).filter(Boolean) as TapestryProfile[];
   } catch (error) {
     console.error('Search profiles error:', error);
     return [];
@@ -119,8 +149,19 @@ export async function searchProfiles(query: string): Promise<TapestryProfile[]> 
 
 export async function getComments(contentId: string): Promise<TapestryComment[]> {
   try {
-    const result = await tapestryFetch<{ comments: TapestryComment[] }>(`/comments?contentId=${encodeURIComponent(contentId)}`);
-    return result.comments || [];
+    const result = await tapestryFetch<{ comments?: any[] }>(`/comments?contentId=${encodeURIComponent(contentId)}`);
+    return (result.comments || []).map((item) => {
+      const comment = item.comment || item;
+      const author = item.author || item.profile || {};
+      return {
+        id: comment.id || item.id,
+        profileId: comment.profileId || author.id || item.profileId || '',
+        content: comment.text || comment.content || item.content || '',
+        contentId,
+        createdAt: normalizeDate(comment.createdAt || comment.created_at || item.createdAt),
+        profile: normalizeProfile(author) || undefined,
+      };
+    });
   } catch (error) {
     console.error('Get comments error:', error);
     return [];
@@ -133,10 +174,19 @@ export async function postComment(
   text: string
 ): Promise<TapestryComment | null> {
   try {
-    return await tapestryFetch<TapestryComment>('/comments', {
+    const result = await tapestryFetch<any>('/comments', {
       method: 'POST',
       body: JSON.stringify({ profileId, contentId, text }),
     });
+    const comment = result.comment || result;
+    return {
+      id: comment.id || result.id,
+      profileId: comment.profileId || profileId,
+      content: comment.text || comment.content || text,
+      contentId,
+      createdAt: normalizeDate(comment.createdAt || comment.created_at || result.createdAt),
+      profile: normalizeProfile(result.author) || undefined,
+    };
   } catch (error) {
     console.error('Post comment error:', error);
     return null;
@@ -157,8 +207,8 @@ export async function deleteComment(commentId: string): Promise<boolean> {
 
 export async function getLikes(contentId: string): Promise<number> {
   try {
-    const result = await tapestryFetch<{ count: number }>(`/likes/${encodeURIComponent(contentId)}`);
-    return result.count || 0;
+    const result = await tapestryFetch<any>(`/likes/${encodeURIComponent(contentId)}`);
+    return result.likeCount || result.count || (result.likes ? result.likes.length : 0);
   } catch (error) {
     console.error('Get likes error:', error);
     return 0;

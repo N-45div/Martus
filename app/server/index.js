@@ -13,35 +13,77 @@ config({ path: join(__dirname, '..', '.env') });
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-const TAPESTRY_API_URL = 'https://api.usetapestry.dev/v1';
-const TAPESTRY_API_KEY = process.env.VITE_TAPESTRY_API_KEY;
+const TAPESTRY_API_URL = process.env.TAPESTRY_API_URL || 'https://api.dev.usetapestry.dev/v1';
+const TAPESTRY_API_KEY = process.env.TAPESTRY_API_KEY || process.env.VITE_TAPESTRY_API_KEY;
+const TAPESTRY_BASE_URLS = (() => {
+  const primary = TAPESTRY_API_URL;
+  const alternate = primary.includes('/api/v1')
+    ? primary.replace('/api/v1', '/v1')
+    : primary.replace('/v1', '/api/v1');
+  return primary === alternate ? [primary] : [primary, alternate];
+})();
 const NAMESPACE = 'martus';
 
 app.use(cors());
 app.use(express.json());
 
+if (!TAPESTRY_API_KEY) {
+  console.warn('[Tapestry] Missing API key. Set VITE_TAPESTRY_API_KEY in app/.env');
+}
+
 // Proxy all Tapestry API requests - Tapestry uses apiKey as query param
 async function tapestryProxy(endpoint, options = {}) {
-  // Add apiKey to endpoint
   const separator = endpoint.includes('?') ? '&' : '?';
-  const url = `${TAPESTRY_API_URL}${endpoint}${separator}apiKey=${TAPESTRY_API_KEY}`;
-  console.log(`[Tapestry] ${options.method || 'GET'} ${endpoint}`);
-  
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+  const method = options.method || 'GET';
 
-  if (!response.ok) {
+  for (let index = 0; index < TAPESTRY_BASE_URLS.length; index += 1) {
+    const baseUrl = TAPESTRY_BASE_URLS[index];
+    const url = `${baseUrl}${endpoint}${separator}apiKey=${TAPESTRY_API_KEY}`;
+    console.log(`[Tapestry] ${method} ${url}`);
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': TAPESTRY_API_KEY,
+        Authorization: TAPESTRY_API_KEY ? `Bearer ${TAPESTRY_API_KEY}` : undefined,
+        ...options.headers,
+      },
+    });
+
+    if (response.ok) {
+      return response.json();
+    }
+
     const error = await response.text();
     console.error(`[Tapestry Error] ${response.status}: ${error}`);
+
+    if (response.status === 404 && index < TAPESTRY_BASE_URLS.length - 1) {
+      console.warn('[Tapestry] Retrying with alternate base URL...');
+      continue;
+    }
+
     throw new Error(`Tapestry API error: ${response.status}`);
   }
 
-  return response.json();
+  throw new Error('Tapestry API error: No base URL succeeded');
+}
+
+async function ensureContentNode(contentId, profileId) {
+  if (!contentId) return null;
+  try {
+    const payload = { id: contentId };
+    if (profileId) {
+      payload.profileId = profileId;
+    }
+    return await tapestryProxy('/contents/findOrCreate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    console.warn('[Tapestry] Failed to ensure content node:', error.message);
+    return null;
+  }
 }
 
 // ==================== PROFILES ====================
@@ -111,6 +153,7 @@ app.get('/api/tapestry/profiles/search', async (req, res) => {
 app.get('/api/tapestry/comments', async (req, res) => {
   try {
     const { contentId } = req.query;
+    await ensureContentNode(contentId);
     const result = await tapestryProxy(
       `/comments?contentId=${encodeURIComponent(contentId)}`
     );
@@ -124,6 +167,7 @@ app.get('/api/tapestry/comments', async (req, res) => {
 app.post('/api/tapestry/comments', async (req, res) => {
   try {
     const { profileId, contentId, text } = req.body;
+    await ensureContentNode(contentId, profileId);
     const result = await tapestryProxy(`/comments`, {
       method: 'POST',
       body: JSON.stringify({ 
@@ -157,10 +201,12 @@ app.delete('/api/tapestry/comments/:commentId', async (req, res) => {
 // Get likes for content
 app.get('/api/tapestry/likes/:contentId', async (req, res) => {
   try {
-    const result = await tapestryProxy(
-      `/likes?contentId=${encodeURIComponent(req.params.contentId)}`
-    );
-    res.json(result);
+    await ensureContentNode(req.params.contentId);
+    const result = await tapestryProxy(`/contents/${encodeURIComponent(req.params.contentId)}`);
+    res.json({
+      count: result?.socialCounts?.likeCount ?? result?.likeCount ?? result?.count ?? 0,
+      details: result,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message, count: 0 });
   }
@@ -170,11 +216,11 @@ app.get('/api/tapestry/likes/:contentId', async (req, res) => {
 app.post('/api/tapestry/likes/:contentId', async (req, res) => {
   try {
     const { profileId } = req.body;
-    const result = await tapestryProxy(`/likes`, {
+    await ensureContentNode(req.params.contentId, profileId);
+    const result = await tapestryProxy(`/likes/${encodeURIComponent(req.params.contentId)}`, {
       method: 'POST',
       body: JSON.stringify({ 
-        profileId, 
-        contentId: req.params.contentId,
+        profileId,
         blockchain: 'SOLANA',
         execution: 'FAST_UNCONFIRMED'
       }),
@@ -189,11 +235,12 @@ app.post('/api/tapestry/likes/:contentId', async (req, res) => {
 app.delete('/api/tapestry/likes/:contentId', async (req, res) => {
   try {
     const { profileId } = req.body;
-    const result = await tapestryProxy(`/likes`, {
+    const result = await tapestryProxy(`/likes/${encodeURIComponent(req.params.contentId)}`, {
       method: 'DELETE',
       body: JSON.stringify({ 
-        profileId, 
-        contentId: req.params.contentId 
+        profileId,
+        blockchain: 'SOLANA',
+        execution: 'FAST_UNCONFIRMED'
       }),
     });
     res.json(result);
@@ -324,5 +371,6 @@ app.get('/api/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Tapestry API server running on http://localhost:${PORT}`);
   console.log(`   Namespace: ${NAMESPACE}`);
+  console.log(`   Base URLs: ${TAPESTRY_BASE_URLS.join(' | ')}`);
   console.log(`   API Key configured: ${TAPESTRY_API_KEY ? 'Yes' : 'No'}`);
 });

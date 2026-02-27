@@ -57,6 +57,9 @@ export function SocialPanel({ contentId, title }: SocialPanelProps) {
     }
   }, [publicKey, contentId, apiStatus, loadProfile, loadSocialData]);
 
+  const displayName = profile?.username || profile?.walletAddress?.slice(0, 8) || 'anon';
+  const displayInitial = displayName.charAt(0).toUpperCase();
+
   const handlePostComment = async () => {
     if (!profile || !newComment.trim()) return;
     
@@ -103,10 +106,10 @@ export function SocialPanel({ contentId, title }: SocialPanelProps) {
       {profile && (
         <div className="flex items-center gap-3 mb-4 p-3 bg-[--pixel-black] border-2 border-[--pixel-cyan]">
           <div className="w-8 h-8 bg-[--pixel-cyan] flex items-center justify-center text-[--pixel-black] font-pixel text-xs">
-            {profile.username.charAt(0).toUpperCase()}
+            {displayInitial}
           </div>
           <div>
-            <p className="font-pixel text-[8px] text-pixel-cyan">{profile.username}</p>
+            <p className="font-pixel text-[8px] text-pixel-cyan">{displayName}</p>
             <p className="text-xs text-[--pixel-light]">{formatAddress(profile.walletAddress)}</p>
           </div>
         </div>
