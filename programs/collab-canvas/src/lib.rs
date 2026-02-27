@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 
-declare_id!("bk3AL2Qz3RAg1mRLJWu8E2iA8NNVf7a3hAoF1L5p7t2");
+declare_id!("4rKLBVWtCkKGR2cP7iD5Bs9pNSGcFjNeK5BvMsR8MGX6");
 
 pub const MAX_TITLE_LEN: usize = 64;
 pub const MAX_DESC_LEN: usize = 256;
@@ -9,7 +9,7 @@ pub const MAX_URI_LEN: usize = 200;
 pub const GRID_SIZE: u8 = 8; // 8x8 grid = 64 regions
 
 #[program]
-pub mod collab_canvas {
+pub mod martus {
     use super::*;
 
     /// Create a new season (canvas)
