@@ -22,6 +22,14 @@ Think of it as **Kickstarter meets Reddit Place meets NFT art** — fully on-cha
 
 ---
 
+## Demo Video
+
+
+https://github.com/user-attachments/assets/b7cd3555-48f8-4795-90e2-8c18582d0e3c
+
+
+---
+
 ## 🏆 Hackathon Submission
 
 **Built for the Solana Hackathon** with integrations:
@@ -79,7 +87,7 @@ Think of it as **Kickstarter meets Reddit Place meets NFT art** — fully on-cha
 ## 📦 Program ID (Devnet)
 
 ```
-bk3AL2Qz3RAg1mRLJWu8E2iA8NNVf7a3hAoF1L5p7t2
+4rKLBVWtCkKGR2cP7iD5Bs9pNSGcFjNeK5BvMsR8MGX6
 ```
 
 ---
@@ -145,45 +153,6 @@ VITE_TAPESTRY_API_KEY=your_tapestry_api_key
 ```
 
 Get your Tapestry API key at [app.usetapestry.dev](https://app.usetapestry.dev)
-
----
-
-## 📁 Project Structure
-
-```
-martus/
-├── programs/collab-canvas/     # Anchor smart contract
-│   └── src/lib.rs              # Core program logic
-├── app/                        # React frontend
-│   ├── src/
-│   │   ├── components/         # UI components
-│   │   ├── hooks/              # React hooks (useProgram)
-│   │   ├── lib/                # Utilities & Tapestry client
-│   │   └── types/              # TypeScript types
-│   └── public/idl/             # Program IDL
-├── tests/                      # Integration tests
-└── Anchor.toml                 # Anchor configuration
-```
-
----
-
-## 🎯 Roadmap
-
-- [x] Core smart contract (Season, Region, Bid, Vote, Payout)
-- [x] React frontend with wallet integration
-- [x] Tapestry social integration
-- [x] Devnet deployment
-- [x] Integration tests
-- [ ] Canvas visualization component
-- [ ] NFT minting flow
-- [ ] Mainnet deployment
-- [ ] Mobile-responsive UI
-
----
-
-## 🤝 Contributing
-
-Contributions welcome! Please read our contributing guidelines and submit PRs.
 
 ---
 
