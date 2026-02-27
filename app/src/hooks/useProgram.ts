@@ -23,7 +23,7 @@ export function useProgram() {
   const [program, setProgram] = useState<Program | null>(null);
   const [season, setSeason] = useState<Season | null>(null);
   const [regions, setRegions] = useState<Map<string, Region>>(new Map());
-  const [_bids, _setBids] = useState<Map<string, Bid[]>>(new Map());
+  const [bidsMap, setBidsMap] = useState<Map<string, Bid[]>>(new Map());
   const [_myContributions, _setMyContributions] = useState<Map<string, Contribution>>(new Map());
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -321,11 +321,46 @@ export function useProgram() {
     setActivities((prev) => [activity, ...prev].slice(0, 50));
   };
 
+  // Fetch bids for a region
+  const fetchBidsForRegion = useCallback(async (regionPubkey: PublicKey): Promise<Bid[]> => {
+    if (!program) return [];
+
+    try {
+      const allBids = await (program.account as Record<string, { all: (filters?: { memcmp: { offset: number; bytes: string } }[]) => Promise<{ publicKey: PublicKey; account: Record<string, unknown> }[]> }>).bid.all([
+        { memcmp: { offset: 8, bytes: regionPubkey.toBase58() } }
+      ]);
+
+      const bids: Bid[] = allBids.map((b) => ({
+        publicKey: b.publicKey,
+        region: b.account.region as PublicKey,
+        artist: b.account.artist as PublicKey,
+        sketchUri: b.account.sketchUri as string,
+        requestedAmount: (b.account.requestedAmount as BN).toNumber(),
+        voteCount: b.account.voteCount as number,
+        voteWeight: (b.account.voteWeight as BN).toNumber(),
+        finalArtUri: b.account.finalArtUri as string | null,
+        isWinner: b.account.isWinner as boolean,
+        bump: b.account.bump as number,
+      }));
+
+      setBidsMap((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(regionPubkey.toBase58(), bids);
+        return newMap;
+      });
+
+      return bids;
+    } catch (err) {
+      console.error('Fetch bids error:', err);
+      return [];
+    }
+  }, [program]);
+
   return {
     program,
     season,
     regions,
-    bids: _bids,
+    bids: bidsMap,
     myContributions: _myContributions,
     activities,
     loading,
@@ -336,6 +371,7 @@ export function useProgram() {
     voteForBid,
     fetchSeason,
     fetchRegions,
+    fetchBidsForRegion,
     getPhase: season ? () => getPhase(season) : () => 'funding' as SeasonPhase,
   };
 }

@@ -20,12 +20,14 @@ function CollabCanvas() {
   const {
     season,
     regions,
+    bids,
     activities,
     loading,
     error,
     createSeason,
     fundRegion,
     submitBid,
+    fetchBidsForRegion,
     getPhase,
   } = useProgram();
 
@@ -33,6 +35,7 @@ function CollabCanvas() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [activeTab, setActiveTab] = useState<'region' | 'social'>('region');
+  const [regionBids, setRegionBids] = useState<import('./types').Bid[]>([]);
 
   // Show help on first visit
   useEffect(() => {
@@ -49,8 +52,14 @@ function CollabCanvas() {
 
   const phase = getPhase();
 
-  const handleRegionClick = (x: number, y: number, _region?: Region) => {
+  const handleRegionClick = async (x: number, y: number, region?: Region) => {
     setSelectedRegion({ x, y });
+    if (region) {
+      const fetchedBids = await fetchBidsForRegion(region.publicKey);
+      setRegionBids(fetchedBids);
+    } else {
+      setRegionBids([]);
+    }
   };
 
   const handleFund = async (amount: number) => {
@@ -231,7 +240,7 @@ function CollabCanvas() {
                     x={selectedRegion.x}
                     y={selectedRegion.y}
                     region={selectedRegionData}
-                    bids={[]}
+                    bids={regionBids}
                     phase={phase}
                     onFund={handleFund}
                     onSubmitBid={handleSubmitBid}

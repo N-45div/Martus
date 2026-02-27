@@ -99,7 +99,7 @@ export function RegionPanel({
             </div>
           )}
 
-          {phase === 'voting' && (
+          {(phase === 'voting' || phase === 'funding') && region && (
             <>
               <div className="border-t-2 border-[--pixel-mid] pt-4">
                 <h4 className="font-pixel text-xs text-pixel-orange mb-3">
