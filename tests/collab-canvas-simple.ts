@@ -3,11 +3,11 @@ const { PublicKey, SystemProgram, LAMPORTS_PER_SOL } = require("@solana/web3.js"
 const { expect } = require("chai");
 const { BN } = anchor;
 
-describe("collab-canvas e2e tests", () => {
+describe("martus e2e tests", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.CollabCanvas;
+  const program = anchor.workspace.Martus;
   const authority = provider.wallet;
 
   // Use unique title to avoid PDA collision
@@ -23,7 +23,7 @@ describe("collab-canvas e2e tests", () => {
       [Buffer.from("season"), authority.publicKey.toBuffer(), Buffer.from(seasonTitle)],
       program.programId
     );
-    console.log("\n=== Collab Canvas E2E Tests ===");
+    console.log("\n=== Martus E2E Tests ===");
     console.log("Program ID:", program.programId.toBase58());
     console.log("Authority:", authority.publicKey.toBase58());
     console.log("Season PDA:", seasonPDA.toBase58());
