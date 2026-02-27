@@ -44,7 +44,7 @@ export function useProgram() {
 
         // Load IDL
         if (!cachedIdl) {
-          const response = await fetch('/idl/collab_canvas.json');
+          const response = await fetch('/idl/martus.json');
           cachedIdl = await response.json();
         }
 
