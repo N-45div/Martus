@@ -2,7 +2,7 @@ import { BN } from '@coral-xyz/anchor';
 import { PublicKey } from '@solana/web3.js';
 
 // Deployed to devnet
-export const PROGRAM_ID = new PublicKey('bk3AL2Qz3RAg1mRLJWu8E2iA8NNVf7a3hAoF1L5p7t2');
+export const PROGRAM_ID = new PublicKey('4rKLBVWtCkKGR2cP7iD5Bs9pNSGcFjNeK5BvMsR8MGX6');
 export const GRID_SIZE = 8;
 
 export function getSeasonPDA(authority: PublicKey, title: string): [PublicKey, number] {
