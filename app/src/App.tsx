@@ -20,7 +20,6 @@ function CollabCanvas() {
   const {
     season,
     regions,
-    bids,
     activities,
     loading,
     error,
